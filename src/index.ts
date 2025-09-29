@@ -14,8 +14,8 @@ interface AppTypeChoice {
 }
 
 const main = async (): Promise<void> => {
-	console.log(chalk.bold.hex("#F5AB00")("\n🚀 Welcome to EC App Creator!\n"));
-	console.log(chalk.gray("Create different types of applications for your EC ecosystem.\n"));
+	console.log(chalk.bold.hex("#F5AB00")("\nEC App Creator\n"));
+	console.log(chalk.gray("Create applications for your EC ecosystem.\n"));
 
 	// Prompt for project name if not provided
 	let projectName: string = process.argv[2];
@@ -37,24 +37,24 @@ const main = async (): Promise<void> => {
 	// Prompt for application type
 	const appTypes: AppTypeChoice[] = [
 		{
-			name: "📱 Webresource App",
+			name: "Webresource App",
 			value: "webresource",
-			description: "React app for Dynamics 365 webresources with Vite, Kendo UI, and Tailwind"
+			description: "React app for Dynamics 365 webresources with Vite, optional Kendo UI, and Tailwind"
 		},
 		{
-			name: "🌐 Portal App",
+			name: "Portal App",
 			value: "portal",
 			description: "Next.js app for customer portals with authentication and Dynamics integration"
 		},
 		{
-			name: "⚡ Power Pages App",
+			name: "Power Pages App",
 			value: "powerpages",
-			description: "React SPA for Power Pages with specialized authentication and data services"
+			description: "React SPA for Power Pages with authentication context and data services"
 		},
 		{
-			name: "📲 Mobile App",
+			name: "Mobile App",
 			value: "mobile",
-			description: "React Native Expo app with NativeWind, TypeScript, and MSAL authentication"
+			description: "React Native Expo app with TypeScript and NativeWind"
 		}
 	];
 
@@ -66,13 +66,13 @@ const main = async (): Promise<void> => {
 			choices: appTypes.map(type => ({
 				name: `${type.name}\n  ${chalk.gray(type.description)}`,
 				value: type.value,
-				short: type.name.replace(/[📱🌐⚡📲]/g, '').trim()
+				short: type.name
 			})),
 			pageSize: 10
 		},
 	]);
 
-	console.log(`\n${chalk.green("✨ Creating")} ${chalk.bold(appType)} app: ${chalk.cyan(projectName)}\n`);
+	console.log(`\n${chalk.green("Creating")} ${chalk.bold(appType)} app: ${chalk.cyan(projectName)}\n`);
 
 	// Route to the appropriate creator
 	switch (appType) {
@@ -94,17 +94,17 @@ const main = async (): Promise<void> => {
 	}
 
 	// Final success message
-	console.log(chalk.green.bold("\n🎉 Project created successfully!"));
+	console.log(chalk.green.bold("\nProject created successfully."));
 	console.log(`\n${chalk.cyan("Next steps:")}`);
-	console.log(`  ${chalk.gray("›")} cd ${projectName}`);
+	console.log(`  - cd ${projectName}`);
 	if (appType === "webresource" || appType === "powerpages") {
-		console.log(`  ${chalk.gray("›")} ${chalk.yellow("npx kendo-ui-license activate")} ${chalk.gray("(IMPORTANT: Activate your Kendo license)")}`);
+		console.log(`  - If you selected Kendo UI: ${chalk.yellow("npx kendo-ui-license activate")}`);
 	}
-	console.log(`  ${chalk.gray("›")} npm run dev`);
-	console.log(`  ${chalk.gray("›")} npm run build\n`);
+	console.log(`  - npm run dev`);
+	console.log(`  - npm run build\n`);
 };
 
 main().catch((error) => {
-	console.error(chalk.red("❌ An error occurred:"), error);
+	console.error(chalk.red("An error occurred:"), error);
 	process.exit(1);
 });

@@ -4,6 +4,7 @@ import fs from "fs-extra";
 import path from "path";
 import { execSync } from "child_process";
 import inquirer from "inquirer";
+import { fileURLToPath } from "url";
 
 // Helper function to run commands and show a spinner
 const runCommand = (command: string, spinnerMessage: string): void => {
@@ -741,6 +742,99 @@ const nextConfig: NextConfig = {
 
 export default nextConfig`;
 
+const getAzureDevOpsPipeline = (): string => `# Azure DevOps Pipeline: Build and Deploy Next.js (standalone) to Azure Web App
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  node_version: '18.x'
+  webAppName: 'YOUR_WEBAPP_NAME'
+  azureSubscription: 'YOUR_AZURE_SERVICE_CONNECTION'
+  # App settings
+  NEXTAUTH_URL: ''
+  NEXTAUTH_SECRET: ''
+  AZURE_AD_CLIENT_ID: ''
+  AZURE_AD_CLIENT_SECRET: ''
+  AZURE_AD_TENANT_ID: ''
+  DYNAMICS_BASE_URL: ''
+  DYNAMICS_API_VERSION: 'v9.2'
+  SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
+
+stages:
+  - stage: Build
+    displayName: Build
+    jobs:
+      - job: Build
+        steps:
+          - task: NodeTool@0
+            displayName: 'Use Node.js $(node_version)'
+            inputs:
+              versionSpec: '$(node_version)'
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npm run build
+            displayName: 'Build app'
+            env:
+              NEXTAUTH_URL: $(NEXTAUTH_URL)
+              NEXTAUTH_SECRET: $(NEXTAUTH_SECRET)
+              AZURE_AD_CLIENT_ID: $(AZURE_AD_CLIENT_ID)
+              AZURE_AD_CLIENT_SECRET: $(AZURE_AD_CLIENT_SECRET)
+              AZURE_AD_TENANT_ID: $(AZURE_AD_TENANT_ID)
+              DYNAMICS_BASE_URL: $(DYNAMICS_BASE_URL)
+              DYNAMICS_API_VERSION: $(DYNAMICS_API_VERSION)
+
+          - task: ArchiveFiles@2
+            displayName: 'Archive repository (with build output)'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish artifact'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
+
+  - stage: Deploy
+    displayName: Deploy to Azure Web App
+    dependsOn: Build
+    jobs:
+      - deployment: DeployWeb
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop
+
+                - task: AzureWebApp@1
+                  displayName: 'Deploy app.zip to Azure Web App'
+                  inputs:
+                    azureSubscription: '$(azureSubscription)'
+                    appName: '$(webAppName)'
+                    package: '$(Pipeline.Workspace)/drop/app.zip'
+                    startupCommand: 'node server.js'
+                    appSettings: |
+                      -SCM_DO_BUILD_DURING_DEPLOYMENT $(SCM_DO_BUILD_DURING_DEPLOYMENT)
+                      -NEXTAUTH_URL $(NEXTAUTH_URL)
+                      -NEXTAUTH_SECRET $(NEXTAUTH_SECRET)
+                      -AZURE_AD_CLIENT_ID $(AZURE_AD_CLIENT_ID)
+                      -AZURE_AD_CLIENT_SECRET $(AZURE_AD_CLIENT_SECRET)
+                      -AZURE_AD_TENANT_ID $(AZURE_AD_TENANT_ID)
+                      -DYNAMICS_BASE_URL $(DYNAMICS_BASE_URL)
+                      -DYNAMICS_API_VERSION $(DYNAMICS_API_VERSION)
+`;
+
 export const createPortalApp = async (projectName: string): Promise<void> => {
   // Prompt for UI library choice
   const { uiLibrary } = await inquirer.prompt([
@@ -933,10 +1027,15 @@ export const createPortalApp = async (projectName: string): Promise<void> => {
   await fs.writeFile(nextConfigPath, getNextConfig(), "utf8");
   ora("Updated next.config.ts with standalone settings").succeed();
 
-  // Add github workflow for deployment
-  const workflowFilePath = path.join(projectDir, "example.deploy.yml");
-  await fs.writeFile(workflowFilePath, getGithubWorkflow(), "utf8");
-  ora("Added GitHub workflow for Azure deployment").succeed();
+  // Add GitHub Actions workflow example
+  const githubWorkflowPath = path.join(projectDir, "github.example.deploy.yml");
+  await fs.writeFile(githubWorkflowPath, getGithubWorkflow(), "utf8");
+  ora("Added GitHub Actions workflow example").succeed();
+
+  // Add Azure DevOps pipeline example
+  const azurePipelinesPath = path.join(projectDir, "azure-pipelines.example.yml");
+  await fs.writeFile(azurePipelinesPath, getAzureDevOpsPipeline(), "utf8");
+  ora("Added Azure DevOps pipeline example").succeed();
 
   // Add Dynamics lib helper
   const dynamicsLibDir = path.join(projectDir, "src", "lib");
@@ -951,6 +1050,29 @@ export const createPortalApp = async (projectName: string): Promise<void> => {
   const dynamicsAccountsHookPath = path.join(hooksDir, "useDynamicsAccounts.ts");
   await fs.writeFile(dynamicsAccountsHookPath, getDynamicsAccountsHook(), "utf8");
   ora("Added Dynamics accounts React Query hook").succeed();
+
+  // Add README.md from template
+  try {
+    const currentFileDir = path.dirname(fileURLToPath(import.meta.url));
+    const candidates = [
+      path.resolve(currentFileDir, "../readmes/portal.md"), // dist layout
+      path.resolve(currentFileDir, "../../src/readmes/portal.md"), // repo layout
+    ];
+    let templatePath = "";
+    for (const c of candidates) {
+      if (fs.existsSync(c)) {
+        templatePath = c;
+        break;
+      }
+    }
+    const readmeContent = templatePath
+      ? await fs.readFile(templatePath, "utf8")
+      : `# EC Portal App\n\nSee documentation inside create-ec-app (portal README template).`;
+    await fs.writeFile(path.join(projectDir, "README.md"), readmeContent, "utf8");
+    ora("Added README.md from template").succeed();
+  } catch (err) {
+    ora("Failed to add README.md from template; keeping default README").warn();
+  }
 
   // Initialize Git
   runCommand("git init", "Initializing Git repository...");

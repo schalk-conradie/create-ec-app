@@ -4,6 +4,7 @@ import fs from "fs-extra";
 import path from "path";
 import { execSync } from "child_process";
 import inquirer from "inquirer";
+import { fileURLToPath } from "url";
 
 interface KendoThemeChoice {
 	name: string;
@@ -25,23 +26,40 @@ const runCommand = (command: string, spinnerMessage: string): void => {
 };
 
 export const createPowerPagesApp = async (projectName: string): Promise<void> => {
-	// Prompt for Kendo theme
-	const kendoThemes: KendoThemeChoice[] = [
-		{ name: "Default", value: "@progress/kendo-theme-default" },
-		{ name: "Bootstrap (v5)", value: "@progress/kendo-theme-bootstrap" },
-		{ name: "Material (v3)", value: "@progress/kendo-theme-material" },
-		{ name: "Fluent", value: "@progress/kendo-theme-fluent" },
-		{ name: "Classic", value: "@progress/kendo-theme-classic" },
-	];
-
-	const { kendoThemePackage } = await inquirer.prompt<{ kendoThemePackage: string }>([
+	// Prompt for UI library choice
+	const { uiLibrary } = await inquirer.prompt([
 		{
 			type: "list",
-			name: "kendoThemePackage",
-			message: "Which Kendo UI theme would you like to install?",
-			choices: kendoThemes,
+			name: "uiLibrary",
+			message: "Which UI library would you like to use?",
+			choices: [
+				{ name: "Kendo UI (React components with themes)", value: "kendo" },
+				{ name: "Shadcn/ui (Modern React components)", value: "shadcn" },
+			],
 		},
 	]);
+
+	let kendoThemePackage = "";
+	if (uiLibrary === "kendo") {
+		// Prompt for Kendo theme
+		const kendoThemes: KendoThemeChoice[] = [
+			{ name: "Default", value: "@progress/kendo-theme-default" },
+			{ name: "Bootstrap (v5)", value: "@progress/kendo-theme-bootstrap" },
+			{ name: "Material (v3)", value: "@progress/kendo-theme-material" },
+			{ name: "Fluent", value: "@progress/kendo-theme-fluent" },
+			{ name: "Classic", value: "@progress/kendo-theme-classic" },
+		];
+
+		const { kendoThemePackage: selectedTheme } = await inquirer.prompt<{ kendoThemePackage: string }>([
+			{
+				type: "list",
+				name: "kendoThemePackage",
+				message: "Which Kendo UI theme would you like to install?",
+				choices: kendoThemes,
+			},
+		]);
+		kendoThemePackage = selectedTheme;
+	}
 
 	const projectDir = path.resolve(process.cwd(), projectName);
 	console.log(`\nScaffolding a new project in ${chalk.green(projectDir)}...\n`);
@@ -61,23 +79,36 @@ export const createPowerPagesApp = async (projectName: string): Promise<void> =>
 	fs.writeJsonSync(packageJsonPath, packageJson, { spaces: 2 });
 	ora("Updated package.json with Vite 7 overrides and custom build script").succeed();
 
-	// Install dependencies with version constraints and overrides
-	const dependencies: string[] = [
-		"@progress/kendo-react-buttons",
-		"@progress/kendo-licensing",
+	// Install dependencies based on UI library choice
+	let dependencies: string[] = [
 		"tailwindcss@^4",
 		"@tailwindcss/vite@^4",
 		"@tanstack/react-query",
 		"zustand",
 		"@types/xrm",
 		"@types/node",
-		kendoThemePackage,
 	];
-	runCommand(
-		`npm install ${dependencies.join(" ")}`,
-		`Installing dependencies (Theme: ${kendoThemePackage.split("/")[1]})...`
-	);
 
+	if (uiLibrary === "kendo") {
+		dependencies.push("@progress/kendo-react-buttons", "@progress/kendo-licensing", kendoThemePackage);
+	}
+
+	const devDependencies: string[] = [];
+	if (uiLibrary === "shadcn") {
+		devDependencies.push("tailwindcss-animate");
+	}
+
+	const installMessage =
+		uiLibrary === "kendo"
+			? `Installing dependencies (Kendo Theme: ${kendoThemePackage.split("/")[1]})...`
+			: "Installing dependencies (Shadcn/ui)...";
+
+	runCommand(`npm install ${dependencies.join(" ")}`, installMessage);
+	if (devDependencies.length > 0) {
+		runCommand(`npm install -D ${devDependencies.join(" ")}`, "Installing dev dependencies...");
+	}
+
+	if (uiLibrary === "kendo") {
 	// Create kendo-tw-preset.js
 	const kendoPresetPath = path.join(projectDir, "kendo-tw-preset.js");
 	const kendoPresetContent = `module.exports = {
@@ -172,6 +203,80 @@ export default {
 };`;
 	fs.writeFileSync(tailwindConfigPath, tailwindConfigContent, "utf8");
 	ora("Created tailwind.config.js with Kendo preset").succeed();
+	} else {
+		// Basic Tailwind config for Shadcn/ui
+		const tailwindConfigPath = path.join(projectDir, "tailwind.config.js");
+		const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
+
+export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: { extend: {} },
+  plugins: [],
+};`;
+		fs.writeFileSync(tailwindConfigPath, tailwindConfigContent, "utf8");
+		ora("Created tailwind.config.js").succeed();
+
+		// Align TypeScript config with Shadcn setup (like webresource creator)
+		const tsconfigPath = path.join(projectDir, "tsconfig.json");
+		const tsConfigContent = `{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  }
+}`;
+		fs.writeFileSync(tsconfigPath, tsConfigContent, "utf8");
+		ora("Updated tsconfig.json with baseUrl and paths").succeed();
+
+		const tsconfigAppPath = path.join(projectDir, "tsconfig.app.json");
+		const tsConfigAppContent = `{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Shadcn */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+  },
+  "include": ["src"]
+}
+`;
+		fs.writeFileSync(tsconfigAppPath, tsConfigAppContent, "utf8");
+		ora("Created tsconfig.app.json").succeed();
+	}
 
 	// Overwrite Vite config with advanced build options
 	const viteConfigPath = path.join(projectDir, "vite.config.ts");
@@ -193,10 +298,20 @@ export default defineConfig({
 	fs.writeFileSync(viteConfigPath, newViteConfigContent, "utf8");
 	ora("Replaced vite.config.ts with custom build config").succeed();
 
-	// Update CSS entry point
-	const indexCssPath = path.join(projectDir, "src", "index.css");
-	fs.writeFileSync(indexCssPath, `@import "tailwindcss";`, "utf8");
-	ora("Updated CSS entry point").succeed();
+    // Update CSS entry point
+    const indexCssPath = path.join(projectDir, "src", "index.css");
+    fs.writeFileSync(indexCssPath, `@import "tailwindcss";`, "utf8");
+    ora("Updated CSS entry point").succeed();
+
+    // Add global type declarations for asset modules
+    const globalDtsPath = path.join(projectDir, "src", "global.d.ts");
+    const globalDtsContent = `declare module "*.css";
+declare module "*.scss";
+declare module "*.svg";
+declare module "*.png";
+`;
+    fs.writeFileSync(globalDtsPath, globalDtsContent, "utf8");
+    ora("Created src/global.d.ts").succeed();
 
 	// Clear App.css
 	const appCssPath = path.join(projectDir, "src", "App.css");
@@ -260,7 +375,7 @@ export const AuthButton = () => {
 
 	// Replace App.tsx with custom content
 	const appTsxPath = path.join(projectDir, "src", "App.tsx");
-	const newAppTsxContent = `import "./App.css";
+	let newAppTsxContent = `import "./App.css";
 import { AuthProvider } from './context/AuthContext'
 import { AuthButton } from './components/shared/AuthButton'
 
@@ -268,8 +383,9 @@ function App() {
   return (
     <>
       <AuthProvider>
-        <div className="flex flex-col h-screen items-center justify-center">
-          Hello World!
+        <div className="flex flex-col h-screen items-center justify-center gap-4">
+          <div>Hello World!</div>
+          <AuthButton />
         </div>
       </AuthProvider>
     </>
@@ -278,15 +394,41 @@ function App() {
 
 export default App;
 `;
+
+	if (uiLibrary === "shadcn") {
+		newAppTsxContent = `import "./App.css";
+import { AuthProvider } from './context/AuthContext'
+import { AuthButton } from './components/shared/AuthButton'
+import { Button } from "@/components/ui/button";
+
+function App() {
+  return (
+    <>
+      <AuthProvider>
+        <div className="flex flex-col h-screen items-center justify-center gap-4">
+          <div>Hello World!</div>
+          <Button>Click me</Button>
+          <AuthButton />
+        </div>
+      </AuthProvider>
+    </>
+  );
+}
+
+export default App;
+`;
+	}
+
 	fs.writeFileSync(appTsxPath, newAppTsxContent, "utf8");
 	ora("Replaced App.tsx with custom template").succeed();
 
 	// Generate main.tsx from template
 	const mainTsxPath = path.join(projectDir, "src", "main.tsx");
+	const kendoImport = uiLibrary === "kendo" ? `import "${kendoThemePackage}/dist/all.css";` : "";
 	const newMainTsxContent = `import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "${kendoThemePackage}/dist/all.css";
+${kendoImport}
 import "./index.css";
 import App from "./App.tsx";
 
@@ -316,6 +458,12 @@ root.render(
 	fs.writeFileSync(mainTsxPath, newMainTsxContent, "utf8");
 	ora("Generated custom main.tsx with providers").succeed();
 
+	// Initialize Shadcn/ui if selected
+	if (uiLibrary === "shadcn") {
+		runCommand("npx shadcn@latest init --force --silent --yes --base-color neutral", "Initializing Shadcn/ui...");
+		runCommand("npx shadcn@latest add --all", "Installing all Shadcn components...");
+	}
+
 	// Modify index.html
 	const indexPath = path.join(projectDir, "index.html");
 	let indexContent = fs.readFileSync(indexPath, "utf8");
@@ -342,6 +490,25 @@ root.render(
 
 	fs.writeFileSync(prettierRcPath, prettierRcContent, "utf8");
 	ora("Added .prettierrc").succeed();
+
+	// Ensure TS path alias for '@' exists (for Kendo branch, Shadcn gets explicit files above)
+	if (uiLibrary === "kendo") {
+		try {
+			const tsConfigPath = path.join(projectDir, "tsconfig.json");
+			const raw = fs.readFileSync(tsConfigPath, "utf8");
+			const tsConfig = JSON.parse(raw);
+			tsConfig.compilerOptions = tsConfig.compilerOptions || {};
+			tsConfig.compilerOptions.baseUrl = tsConfig.compilerOptions.baseUrl || ".";
+			tsConfig.compilerOptions.paths = {
+				...(tsConfig.compilerOptions.paths || {}),
+				"@/*": ["./src/*"],
+			};
+			fs.writeFileSync(tsConfigPath, JSON.stringify(tsConfig, null, 2), "utf8");
+			ora("Updated tsconfig.json with path alias '@'").succeed();
+		} catch (e) {
+			ora("Warning: could not update tsconfig.json with alias").warn();
+		}
+	}
 
 	// Add in the AuthContext
 	const contextDir = path.join(projectDir, "src", "context");
@@ -506,6 +673,29 @@ export async function getEntity(): Promise<T[]> {
 `;
 	fs.writeFileSync(powerPagesConfigPath, powerPagesConfigContent, "utf8");
 	ora("Created powerpages.config.json").succeed();
+
+	// Replace README.md with template
+	try {
+		const currentFileDir = path.dirname(fileURLToPath(import.meta.url));
+		const candidates = [
+			path.resolve(currentFileDir, "../readmes/powerpages.md"), // dist layout
+			path.resolve(currentFileDir, "../../src/readmes/powerpages.md"), // repo layout
+		];
+		let templatePath = "";
+		for (const c of candidates) {
+			if (fs.existsSync(c)) {
+				templatePath = c;
+				break;
+			}
+		}
+		const readmeContent = templatePath
+			? fs.readFileSync(templatePath, "utf8")
+			: `# EC Power Pages App\n\nSee documentation inside create-ec-app (powerpages README template).`;
+		fs.writeFileSync(path.join(projectDir, "README.md"), readmeContent, "utf8");
+		ora("Added README.md from template").succeed();
+	} catch (err) {
+		ora("Failed to add README.md from template; keeping default README").warn();
+	}
 
 	// Initialize Git
 	runCommand("git init", "Initializing Git repository...");

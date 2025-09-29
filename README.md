@@ -1,6 +1,6 @@
 # create-ec-app
 
-🚀 **Unified CLI tool to create different types of EC applications**
+Unified CLI tool to create different types of EC applications
 
 Create React, Next.js, Power Pages, and React Native applications with a single command. Each app comes pre-configured with the tools and patterns you need for building enterprise applications.
 
@@ -26,20 +26,20 @@ pnpm create ec-app my-awesome-project
 
 ## App Types
 
-### 📱 Webresource App
+### Webresource App
 
 Perfect for Dynamics 365 webresources
 
 - **Framework**: React + Vite + TypeScript
-- **Styling**: Tailwind CSS + Kendo UI
+- **Styling**: Tailwind CSS + Kendo UI or Shadcn/ui
 - **Features**:
   - Pre-configured for Dynamics 365 embedding
-  - Kendo UI theme selection
+  - UI library choice: Kendo UI theme selection or Shadcn/ui setup
   - TanStack Query for data fetching
   - Zustand for state management
   - XRM type definitions
 
-### 🌐 Portal App
+### Portal App
 
 Ideal for customer portals and external-facing applications
 
@@ -48,22 +48,22 @@ Ideal for customer portals and external-facing applications
 - **Features**:
   - NextAuth.js authentication
   - Dynamics 365 integration
-  - GitHub Actions workflow
+  - GitHub Actions workflow and Azure DevOps pipeline examples
   - Environment configuration
 
-### ⚡ Power Pages App
+### Power Pages App
 
 Specialized for Microsoft Power Pages
 
 - **Framework**: React + Vite + TypeScript
-- **Styling**: Tailwind CSS + Kendo UI
+- **Styling**: Tailwind CSS + Kendo UI or Shadcn/ui
 - **Features**:
   - Power Pages authentication context
   - Portal-specific data services
   - Pre-built auth components
   - Power Pages configuration
 
-### 📲 Mobile App
+### Mobile App
 
 Cross-platform mobile development
 
@@ -157,10 +157,12 @@ All applications come with:
 - ✅ Environment configuration
 - ✅ Build and development scripts
 - ✅ Enterprise-ready folder structure
+- ✅ Tailored project README in the generated app root (setup, auth, deployment)
 
 ### Webresource & Power Pages Apps Include:
 
-- Kendo UI components and theming
+- Choice of UI library (Kendo UI or Shadcn/ui)
+- Kendo UI theming support when Kendo is selected
 - Dynamics 365 authentication helpers
 - TanStack Query setup
 - Zustand store configuration
@@ -169,7 +171,8 @@ All applications come with:
 
 - NextAuth.js configuration
 - Choice of UI library (Kendo UI or Shadcn/ui)
-- GitHub Actions deployment workflow example
+- GitHub Actions deployment workflow example (`github.example.deploy.yml`)
+- Azure DevOps pipeline example (`azure-pipelines.example.yml`)
 - Environment variable templates
 
 ### Mobile Apps Include:

@@ -3,6 +3,7 @@ import ora from "ora";
 import fs from "fs-extra";
 import path from "path";
 import { execSync } from "child_process";
+import { fileURLToPath } from "url";
 
 // Helper function to run commands and show a spinner
 const runCommand = (command: string, spinnerMessage: string): void => {
@@ -233,6 +234,29 @@ export const createMobileApp = async (projectName: string): Promise<void> => {
 	const componentsJsonPath = path.join(projectDir, "components.json");
 	await fs.writeFile(componentsJsonPath, getComponentsJson(), "utf8");
 	ora("Created components.json").succeed();
+
+	// Add README.md from template
+	try {
+		const currentFileDir = path.dirname(fileURLToPath(import.meta.url));
+		const candidates = [
+			path.resolve(currentFileDir, "../readmes/mobile.md"), // dist layout
+			path.resolve(currentFileDir, "../../src/readmes/mobile.md"), // repo layout
+		];
+		let templatePath = "";
+		for (const c of candidates) {
+			if (fs.existsSync(c)) {
+				templatePath = c;
+				break;
+			}
+		}
+		const readmeContent = templatePath
+			? await fs.readFile(templatePath, "utf8")
+			: `# EC Mobile App\n\nSee documentation inside create-ec-app (mobile README template).`;
+		await fs.writeFile(path.join(projectDir, "README.md"), readmeContent, "utf8");
+		ora("Added README.md from template").succeed();
+	} catch (err) {
+		ora("Failed to add README.md from template; keeping default README").warn();
+	}
 
 	// Initialize Git
 	runCommand("git init", "Initializing Git repository...");
