@@ -151,13 +151,13 @@ create-ec-app my-project
 
 All applications come with:
 
-- ✅ TypeScript configuration
-- ✅ ESLint and Prettier setup
-- ✅ Git repository initialization
-- ✅ Environment configuration
-- ✅ Build and development scripts
-- ✅ Enterprise-ready folder structure
-- ✅ Tailored project README in the generated app root (setup, auth, deployment)
+- TypeScript configuration
+- ESLint and Prettier setup
+- Git repository initialization
+- Environment configuration
+- Build and development scripts
+- Enterprise-ready folder structure
+- Tailored project README in the generated app root (setup, auth, deployment)
 
 ### Webresource & Power Pages Apps Include:
 
