@@ -1,117 +1,117 @@
+import { execSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import chalk from "chalk";
-import ora from "ora";
 import fs from "fs-extra";
-import path from "path";
-import { execSync } from "child_process";
 import inquirer from "inquirer";
-import { fileURLToPath } from "url";
+import ora from "ora";
 
 interface KendoThemeChoice {
-	name: string;
-	value: string;
+    name: string;
+    value: string;
 }
 
 // Helper function to run commands and show a spinner
 const runCommand = (command: string, spinnerMessage: string): void => {
-	const spinner = ora(spinnerMessage).start();
-	try {
-		execSync(command, { stdio: "pipe" });
-		spinner.succeed();
-	} catch (error) {
-		spinner.fail();
-		console.error(chalk.red(`Failed to execute command: ${command}`));
-		console.error(error);
-		process.exit(1);
-	}
+    const spinner = ora(spinnerMessage).start();
+    try {
+        execSync(command, { stdio: "pipe" });
+        spinner.succeed();
+    } catch (error) {
+        spinner.fail();
+        console.error(chalk.red(`Failed to execute command: ${command}`));
+        console.error(error);
+        process.exit(1);
+    }
 };
 
 export const createPowerPagesApp = async (projectName: string): Promise<void> => {
-	// Prompt for UI library choice
-	const { uiLibrary } = await inquirer.prompt([
-		{
-			type: "list",
-			name: "uiLibrary",
-			message: "Which UI library would you like to use?",
-			choices: [
-				{ name: "Kendo UI (React components with themes)", value: "kendo" },
-				{ name: "Shadcn/ui (Modern React components)", value: "shadcn" },
-			],
-		},
-	]);
+    // Prompt for UI library choice
+    const { uiLibrary } = await inquirer.prompt([
+        {
+            type: "list",
+            name: "uiLibrary",
+            message: "Which UI library would you like to use?",
+            choices: [
+                { name: "Kendo UI (React components with themes)", value: "kendo" },
+                { name: "Shadcn/ui (Modern React components)", value: "shadcn" },
+            ],
+        },
+    ]);
 
-	let kendoThemePackage = "";
-	if (uiLibrary === "kendo") {
-		// Prompt for Kendo theme
-		const kendoThemes: KendoThemeChoice[] = [
-			{ name: "Default", value: "@progress/kendo-theme-default" },
-			{ name: "Bootstrap (v5)", value: "@progress/kendo-theme-bootstrap" },
-			{ name: "Material (v3)", value: "@progress/kendo-theme-material" },
-			{ name: "Fluent", value: "@progress/kendo-theme-fluent" },
-			{ name: "Classic", value: "@progress/kendo-theme-classic" },
-		];
+    let kendoThemePackage = "";
+    if (uiLibrary === "kendo") {
+        // Prompt for Kendo theme
+        const kendoThemes: KendoThemeChoice[] = [
+            { name: "Default", value: "@progress/kendo-theme-default" },
+            { name: "Bootstrap (v5)", value: "@progress/kendo-theme-bootstrap" },
+            { name: "Material (v3)", value: "@progress/kendo-theme-material" },
+            { name: "Fluent", value: "@progress/kendo-theme-fluent" },
+            { name: "Classic", value: "@progress/kendo-theme-classic" },
+        ];
 
-		const { kendoThemePackage: selectedTheme } = await inquirer.prompt<{ kendoThemePackage: string }>([
-			{
-				type: "list",
-				name: "kendoThemePackage",
-				message: "Which Kendo UI theme would you like to install?",
-				choices: kendoThemes,
-			},
-		]);
-		kendoThemePackage = selectedTheme;
-	}
+        const { kendoThemePackage: selectedTheme } = await inquirer.prompt<{ kendoThemePackage: string }>([
+            {
+                type: "list",
+                name: "kendoThemePackage",
+                message: "Which Kendo UI theme would you like to install?",
+                choices: kendoThemes,
+            },
+        ]);
+        kendoThemePackage = selectedTheme;
+    }
 
-	const projectDir = path.resolve(process.cwd(), projectName);
-	console.log(`\nScaffolding a new project in ${chalk.green(projectDir)}...\n`);
+    const projectDir = path.resolve(process.cwd(), projectName);
+    console.log(`\nScaffolding a new project in ${chalk.green(projectDir)}...\n`);
 
-	// Create React + Vite (TypeScript) project
-	runCommand(`npm create vite@latest ${projectName} -- --template react-ts`, "Creating Vite + React + TS project...");
+    // Create React + Vite (TypeScript) project
+    runCommand(`npm create vite@latest ${projectName} -- --template react-ts`, "Creating Vite + React + TS project...");
 
-	process.chdir(projectDir);
+    process.chdir(projectDir);
 
-	// Update package.json with overrides for Vite 7 compatibility
-	const packageJsonPath = path.join(projectDir, "package.json");
-	const packageJson = fs.readJsonSync(packageJsonPath);
+    // Update package.json with overrides for Vite 7 compatibility
+    const packageJsonPath = path.join(projectDir, "package.json");
+    const packageJson = fs.readJsonSync(packageJsonPath);
 
-	// Add custom build script
-	packageJson.scripts["build:dev"] = "tsc -b && vite build --mode development";
+    // Add custom build script
+    packageJson.scripts["build:dev"] = "tsc -b && vite build --mode development";
 
-	fs.writeJsonSync(packageJsonPath, packageJson, { spaces: 2 });
-	ora("Updated package.json with Vite 7 overrides and custom build script").succeed();
+    fs.writeJsonSync(packageJsonPath, packageJson, { spaces: 2 });
+    ora("Updated package.json with Vite 7 overrides and custom build script").succeed();
 
-	// Install dependencies based on UI library choice
-	let dependencies: string[] = [
-		"tailwindcss@^4",
-		"@tailwindcss/vite@^4",
-		"@tanstack/react-query",
-		"zustand",
-		"@types/xrm",
-		"@types/node",
-	];
+    // Install dependencies based on UI library choice
+    const dependencies: string[] = [
+        "tailwindcss@^4",
+        "@tailwindcss/vite@^4",
+        "@tanstack/react-query",
+        "zustand",
+        "@types/xrm",
+        "@types/node",
+    ];
 
-	if (uiLibrary === "kendo") {
-		dependencies.push("@progress/kendo-react-buttons", "@progress/kendo-licensing", kendoThemePackage);
-	}
+    if (uiLibrary === "kendo") {
+        dependencies.push("@progress/kendo-react-buttons", "@progress/kendo-licensing", kendoThemePackage);
+    }
 
-	const devDependencies: string[] = [];
-	if (uiLibrary === "shadcn") {
-		devDependencies.push("tailwindcss-animate");
-	}
+    const devDependencies: string[] = [];
+    if (uiLibrary === "shadcn") {
+        devDependencies.push("tailwindcss-animate");
+    }
 
-	const installMessage =
-		uiLibrary === "kendo"
-			? `Installing dependencies (Kendo Theme: ${kendoThemePackage.split("/")[1]})...`
-			: "Installing dependencies (Shadcn/ui)...";
+    const installMessage =
+        uiLibrary === "kendo"
+            ? `Installing dependencies (Kendo Theme: ${kendoThemePackage.split("/")[1]})...`
+            : "Installing dependencies (Shadcn/ui)...";
 
-	runCommand(`npm install ${dependencies.join(" ")}`, installMessage);
-	if (devDependencies.length > 0) {
-		runCommand(`npm install -D ${devDependencies.join(" ")}`, "Installing dev dependencies...");
-	}
+    runCommand(`npm install ${dependencies.join(" ")}`, installMessage);
+    if (devDependencies.length > 0) {
+        runCommand(`npm install -D ${devDependencies.join(" ")}`, "Installing dev dependencies...");
+    }
 
-	if (uiLibrary === "kendo") {
-	// Create kendo-tw-preset.js
-	const kendoPresetPath = path.join(projectDir, "kendo-tw-preset.js");
-	const kendoPresetContent = `module.exports = {
+    if (uiLibrary === "kendo") {
+        // Create kendo-tw-preset.js
+        const kendoPresetPath = path.join(projectDir, "kendo-tw-preset.js");
+        const kendoPresetContent = `module.exports = {
   theme: {
     extend: {
       spacing: {
@@ -182,12 +182,12 @@ export const createPowerPagesApp = async (projectName: string): Promise<void> =>
     },
   },
 };`;
-	fs.writeFileSync(kendoPresetPath, kendoPresetContent, "utf8");
-	ora("Created kendo-tw-preset.js").succeed();
+        fs.writeFileSync(kendoPresetPath, kendoPresetContent, "utf8");
+        ora("Created kendo-tw-preset.js").succeed();
 
-	// Create tailwind.config.js with Kendo preset
-	const tailwindConfigPath = path.join(projectDir, "tailwind.config.js");
-	const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
+        // Create tailwind.config.js with Kendo preset
+        const tailwindConfigPath = path.join(projectDir, "tailwind.config.js");
+        const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
 
 import kendoTwPreset from "./kendo-tw-preset.js";
 
@@ -201,24 +201,24 @@ export default {
   },
   plugins: [],
 };`;
-	fs.writeFileSync(tailwindConfigPath, tailwindConfigContent, "utf8");
-	ora("Created tailwind.config.js with Kendo preset").succeed();
-	} else {
-		// Basic Tailwind config for Shadcn/ui
-		const tailwindConfigPath = path.join(projectDir, "tailwind.config.js");
-		const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
+        fs.writeFileSync(tailwindConfigPath, tailwindConfigContent, "utf8");
+        ora("Created tailwind.config.js with Kendo preset").succeed();
+    } else {
+        // Basic Tailwind config for Shadcn/ui
+        const tailwindConfigPath = path.join(projectDir, "tailwind.config.js");
+        const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
 
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: { extend: {} },
   plugins: [],
 };`;
-		fs.writeFileSync(tailwindConfigPath, tailwindConfigContent, "utf8");
-		ora("Created tailwind.config.js").succeed();
+        fs.writeFileSync(tailwindConfigPath, tailwindConfigContent, "utf8");
+        ora("Created tailwind.config.js").succeed();
 
-		// Align TypeScript config with Shadcn setup (like webresource creator)
-		const tsconfigPath = path.join(projectDir, "tsconfig.json");
-		const tsConfigContent = `{
+        // Align TypeScript config with Shadcn setup (like webresource creator)
+        const tsconfigPath = path.join(projectDir, "tsconfig.json");
+        const tsConfigContent = `{
   "files": [],
   "references": [
     {
@@ -237,11 +237,11 @@ export default {
     }
   }
 }`;
-		fs.writeFileSync(tsconfigPath, tsConfigContent, "utf8");
-		ora("Updated tsconfig.json with baseUrl and paths").succeed();
+        fs.writeFileSync(tsconfigPath, tsConfigContent, "utf8");
+        ora("Updated tsconfig.json with baseUrl and paths").succeed();
 
-		const tsconfigAppPath = path.join(projectDir, "tsconfig.app.json");
-		const tsConfigAppContent = `{
+        const tsconfigAppPath = path.join(projectDir, "tsconfig.app.json");
+        const tsConfigAppContent = `{
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
@@ -274,13 +274,13 @@ export default {
   "include": ["src"]
 }
 `;
-		fs.writeFileSync(tsconfigAppPath, tsConfigAppContent, "utf8");
-		ora("Created tsconfig.app.json").succeed();
-	}
+        fs.writeFileSync(tsconfigAppPath, tsConfigAppContent, "utf8");
+        ora("Created tsconfig.app.json").succeed();
+    }
 
-	// Overwrite Vite config with advanced build options
-	const viteConfigPath = path.join(projectDir, "vite.config.ts");
-	const newViteConfigContent = `import path from "path";
+    // Overwrite Vite config with advanced build options
+    const viteConfigPath = path.join(projectDir, "vite.config.ts");
+    const newViteConfigContent = `import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -295,8 +295,8 @@ export default defineConfig({
   },
 });
 `;
-	fs.writeFileSync(viteConfigPath, newViteConfigContent, "utf8");
-	ora("Replaced vite.config.ts with custom build config").succeed();
+    fs.writeFileSync(viteConfigPath, newViteConfigContent, "utf8");
+    ora("Replaced vite.config.ts with custom build config").succeed();
 
     // Update CSS entry point
     const indexCssPath = path.join(projectDir, "src", "index.css");
@@ -313,18 +313,18 @@ declare module "*.png";
     fs.writeFileSync(globalDtsPath, globalDtsContent, "utf8");
     ora("Created src/global.d.ts").succeed();
 
-	// Clear App.css
-	const appCssPath = path.join(projectDir, "src", "App.css");
-	fs.writeFileSync(appCssPath, "", "utf8");
-	ora("Cleared App.css").succeed();
+    // Clear App.css
+    const appCssPath = path.join(projectDir, "src", "App.css");
+    fs.writeFileSync(appCssPath, "", "utf8");
+    ora("Cleared App.css").succeed();
 
-	// Create shared AuthButton component
-	const componentsDir = path.join(projectDir, "src", "components");
-	const sharedDir = path.join(componentsDir, "shared");
-	fs.ensureDirSync(sharedDir);
+    // Create shared AuthButton component
+    const componentsDir = path.join(projectDir, "src", "components");
+    const sharedDir = path.join(componentsDir, "shared");
+    fs.ensureDirSync(sharedDir);
 
-	const authButtonPath = path.join(sharedDir, "AuthButton.tsx");
-	const authButtonContent = `import { useAuth } from '../../context/AuthContext';
+    const authButtonPath = path.join(sharedDir, "AuthButton.tsx");
+    const authButtonContent = `import { useAuth } from '../../context/AuthContext';
 
 export const AuthButton = () => {
   const { user, isAuthenticated, isLoading, tenantId, token } = useAuth();
@@ -347,7 +347,7 @@ export const AuthButton = () => {
         <button
           type="button"
           className="rounded border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          onClick={() => (window.location.href = '/Account/Login/LogOff?returnUrl=%2F')}
+          onClick={() => { window.location.href = '/Account/Login/LogOff?returnUrl=%2F'; }}
         >
           Logout
         </button>
@@ -370,12 +370,12 @@ export const AuthButton = () => {
   );
 };
 `;
-	fs.writeFileSync(authButtonPath, authButtonContent, "utf8");
-	ora("Created AuthButton.tsx in src/components/shared").succeed();
+    fs.writeFileSync(authButtonPath, authButtonContent, "utf8");
+    ora("Created AuthButton.tsx in src/components/shared").succeed();
 
-	// Replace App.tsx with custom content
-	const appTsxPath = path.join(projectDir, "src", "App.tsx");
-	let newAppTsxContent = `import "./App.css";
+    // Replace App.tsx with custom content
+    const appTsxPath = path.join(projectDir, "src", "App.tsx");
+    let newAppTsxContent = `import "./App.css";
 import { AuthProvider } from './context/AuthContext'
 import { AuthButton } from './components/shared/AuthButton'
 
@@ -395,8 +395,8 @@ function App() {
 export default App;
 `;
 
-	if (uiLibrary === "shadcn") {
-		newAppTsxContent = `import "./App.css";
+    if (uiLibrary === "shadcn") {
+        newAppTsxContent = `import "./App.css";
 import { AuthProvider } from './context/AuthContext'
 import { AuthButton } from './components/shared/AuthButton'
 import { Button } from "@/components/ui/button";
@@ -417,15 +417,15 @@ function App() {
 
 export default App;
 `;
-	}
+    }
 
-	fs.writeFileSync(appTsxPath, newAppTsxContent, "utf8");
-	ora("Replaced App.tsx with custom template").succeed();
+    fs.writeFileSync(appTsxPath, newAppTsxContent, "utf8");
+    ora("Replaced App.tsx with custom template").succeed();
 
-	// Generate main.tsx from template
-	const mainTsxPath = path.join(projectDir, "src", "main.tsx");
-	const kendoImport = uiLibrary === "kendo" ? `import "${kendoThemePackage}/dist/all.css";` : "";
-	const newMainTsxContent = `import { StrictMode } from "react";
+    // Generate main.tsx from template
+    const mainTsxPath = path.join(projectDir, "src", "main.tsx");
+    const kendoImport = uiLibrary === "kendo" ? `import "${kendoThemePackage}/dist/all.css";` : "";
+    const newMainTsxContent = `import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 ${kendoImport}
@@ -455,28 +455,28 @@ root.render(
   </StrictMode>
 );
 `;
-	fs.writeFileSync(mainTsxPath, newMainTsxContent, "utf8");
-	ora("Generated custom main.tsx with providers").succeed();
+    fs.writeFileSync(mainTsxPath, newMainTsxContent, "utf8");
+    ora("Generated custom main.tsx with providers").succeed();
 
-	// Initialize Shadcn/ui if selected
-	if (uiLibrary === "shadcn") {
-		runCommand("npx shadcn@latest init --force --silent --yes --base-color neutral", "Initializing Shadcn/ui...");
-		runCommand("npx shadcn@latest add --all", "Installing all Shadcn components...");
-	}
+    // Initialize Shadcn/ui if selected
+    if (uiLibrary === "shadcn") {
+        runCommand("npx shadcn@latest init --force --silent --yes --base-color neutral", "Initializing Shadcn/ui...");
+        runCommand("npx shadcn@latest add --all", "Installing all Shadcn components...");
+    }
 
-	// Modify index.html
-	const indexPath = path.join(projectDir, "index.html");
-	let indexContent = fs.readFileSync(indexPath, "utf8");
-	indexContent = indexContent.replace(
-		"<title>Vite + React + TS</title>",
-		"<title>EC | Vite + React + TS + Kendo UI + Tailwind</title>"
-	);
-	fs.writeFileSync(indexPath, indexContent, "utf8");
-	ora("Updated index.html").succeed();
+    // Modify index.html
+    const indexPath = path.join(projectDir, "index.html");
+    let indexContent = fs.readFileSync(indexPath, "utf8");
+    indexContent = indexContent.replace(
+        "<title>Vite + React + TS</title>",
+        "<title>EC | Vite + React + TS + Kendo UI + Tailwind</title>"
+    );
+    fs.writeFileSync(indexPath, indexContent, "utf8");
+    ora("Updated index.html").succeed();
 
-	// Add .prettierrc in root directory
-	const prettierRcPath = path.join(projectDir, ".prettierrc");
-	const prettierRcContent = `{
+    // Add .prettierrc in root directory
+    const prettierRcPath = path.join(projectDir, ".prettierrc");
+    const prettierRcContent = `{
 	"tabWidth": 4,
 	"useTabs": true,
 	"semi": true,
@@ -488,34 +488,34 @@ root.render(
 	"printWidth": 120
 }`;
 
-	fs.writeFileSync(prettierRcPath, prettierRcContent, "utf8");
-	ora("Added .prettierrc").succeed();
+    fs.writeFileSync(prettierRcPath, prettierRcContent, "utf8");
+    ora("Added .prettierrc").succeed();
 
-	// Ensure TS path alias for '@' exists (for Kendo branch, Shadcn gets explicit files above)
-	if (uiLibrary === "kendo") {
-		try {
-			const tsConfigPath = path.join(projectDir, "tsconfig.json");
-			const raw = fs.readFileSync(tsConfigPath, "utf8");
-			const tsConfig = JSON.parse(raw);
-			tsConfig.compilerOptions = tsConfig.compilerOptions || {};
-			tsConfig.compilerOptions.baseUrl = tsConfig.compilerOptions.baseUrl || ".";
-			tsConfig.compilerOptions.paths = {
-				...(tsConfig.compilerOptions.paths || {}),
-				"@/*": ["./src/*"],
-			};
-			fs.writeFileSync(tsConfigPath, JSON.stringify(tsConfig, null, 2), "utf8");
-			ora("Updated tsconfig.json with path alias '@'").succeed();
-		} catch (e) {
-			ora("Warning: could not update tsconfig.json with alias").warn();
-		}
-	}
+    // Ensure TS path alias for '@' exists (for Kendo branch, Shadcn gets explicit files above)
+    if (uiLibrary === "kendo") {
+        try {
+            const tsConfigPath = path.join(projectDir, "tsconfig.json");
+            const raw = fs.readFileSync(tsConfigPath, "utf8");
+            const tsConfig = JSON.parse(raw);
+            tsConfig.compilerOptions = tsConfig.compilerOptions || {};
+            tsConfig.compilerOptions.baseUrl = tsConfig.compilerOptions.baseUrl || ".";
+            tsConfig.compilerOptions.paths = {
+                ...(tsConfig.compilerOptions.paths || {}),
+                "@/*": ["./src/*"],
+            };
+            fs.writeFileSync(tsConfigPath, JSON.stringify(tsConfig, null, 2), "utf8");
+            ora("Updated tsconfig.json with path alias '@'").succeed();
+        } catch (_) {
+            ora("Warning: could not update tsconfig.json with alias").warn();
+        }
+    }
 
-	// Add in the AuthContext
-	const contextDir = path.join(projectDir, "src", "context");
-	fs.ensureDirSync(contextDir);
+    // Add in the AuthContext
+    const contextDir = path.join(projectDir, "src", "context");
+    fs.ensureDirSync(contextDir);
 
-	const authContextPath = path.join(contextDir, "AuthContext.tsx");
-	const authContextContent = `import React, { createContext, useContext, useState, useEffect } from 'react';
+    const authContextPath = path.join(contextDir, "AuthContext.tsx");
+    const authContextContent = `import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface User {
@@ -549,8 +549,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshToken = async (): Promise<void> => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newToken = await (window as any).shell?.getTokenDeferred();
-      setToken(newToken || '');
+      if ((window as any).shell?.getTokenDeferred) {
+        const newToken = await (window as any).shell.getTokenDeferred();
+        setToken(newToken || '');
+      } else if (import.meta.env.DEV) {
+        // Local development: read from token.json via fetch
+        const resp = await fetch('/token.json');
+        const data = await resp.json();
+        setToken(data.accessToken || '');
+      }
     } catch (error) {
       console.error('Error fetching token:', error);
       setToken('');
@@ -623,15 +630,107 @@ export const useAuth = (): AuthContextType => {
   return context;
 };`;
 
-	fs.writeFileSync(authContextPath, authContextContent, "utf8");
-	ora("Created AuthContext.tsx in src/context").succeed();
+    fs.writeFileSync(authContextPath, authContextContent, "utf8");
+    ora("Created AuthContext.tsx in src/context").succeed();
 
-	// Create services directory and DataService.ts
-	const servicesDir = path.join(projectDir, "src", "services");
-	fs.ensureDirSync(servicesDir);
+    // Create authService.ts for API URL and Auth Headers logic
+    const servicesDir = path.join(projectDir, "src", "services");
+    fs.ensureDirSync(servicesDir);
 
-	const dataServicePath = path.join(servicesDir, "DataService.ts");
-	const dataServiceContent = `export interface T {
+    const authServicePath = path.join(servicesDir, "authService.ts");
+    const authServiceContent = `
+/// <reference types="vite/client" />
+    /**
+ * AuthService: Helper functions for API URL and Auth headers.
+ * Supports Power Pages runtime and local development with token.json.
+ */
+
+// Returns either '/_api' (Power Pages) or a remote URL (from token.json) in local dev
+export async function getApiUrl(): Promise<string> {
+  // Power Pages runtime
+  if (typeof window !== 'undefined' && (window as any).shell?.getTokenDeferred) {
+    return '/_api';
+  }
+  // Local dev: fetch token.json to get remoteUrl (if present)
+  if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    try {
+      const resp = await fetch('/token.json');
+      const data = await resp.json();
+      if (data.remoteUrl) return data.remoteUrl;
+    } catch {}
+  }
+  // fallback
+  return '/_api';
+}
+
+// Returns authentication headers for fetch requests
+export async function getAuthHeaders(): Promise<HeadersInit> {
+  // Power Pages runtime
+  if (typeof window !== 'undefined' && (window as any).shell?.getTokenDeferred) {
+    const token = await (window as any).shell.getTokenDeferred();
+    return {
+      Authorization: \`Bearer \${token}\`
+    };
+  }
+  // Local dev: read from token.json
+  if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    try {
+      const resp = await fetch('/token.json');
+      const data = await resp.json();
+      if (data.accessToken) {
+        return {
+          Authorization: \`\${data.tokenType || 'Bearer'} \${data.accessToken}\`
+        };
+      }
+    } catch {}
+  }
+  // fallback
+  return {};
+}
+`;
+    fs.writeFileSync(authServicePath, authServiceContent, "utf8");
+    ora("Created authService.ts in src/services").succeed();
+
+    // Create token.json at project root with placeholder token for local dev
+    const tokenJsonPath = path.join(projectDir, "token.json");
+    const tokenJsonContent = `{
+  "accessToken": "<your-token-here>",
+  "expiresIn": "",
+  "expires_on": 0,
+  "tenant": "",
+  "tokenType": "Bearer"
+}
+`;
+    fs.writeFileSync(tokenJsonPath, tokenJsonContent, "utf8");
+    ora("Created token.json for local development").succeed();
+
+    // Add token.json to .gitignore
+    const gitignorePath = path.join(projectDir, ".gitignore");
+    let gitignoreContent = "";
+    if (fs.existsSync(gitignorePath)) {
+        gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+        if (!gitignoreContent.includes("token.json")) {
+            gitignoreContent += "\ntoken.json\n";
+            fs.writeFileSync(gitignorePath, gitignoreContent, "utf8");
+            ora("Added token.json to .gitignore").succeed();
+        }
+    } else {
+        fs.writeFileSync(gitignorePath, "token.json\n", "utf8");
+        ora("Created .gitignore and added token.json").succeed();
+    }
+
+    // Print reminder for user to fill in token.json
+    console.log(
+        chalk.yellowBright(
+            "\nReminder: For local development, please populate 'token.json' at the project root with a valid access token and remoteUrl if needed.\n"
+        )
+    );
+
+    // Create DataService.ts using getApiUrl/getAuthHeaders (for future-proofing)
+    const dataServicePath = path.join(servicesDir, "DataService.ts");
+    const dataServiceContent = `import { getApiUrl, getAuthHeaders } from "./authService";
+
+export interface T {
   entityId: string;
   [key: string]: unknown;
 }
@@ -640,12 +739,13 @@ export interface ApiResponse<T> {
   value: T[];
 }
 
-const BASE_URL = '/_api';
-
 export async function getEntity(): Promise<T[]> {
-  const response = await fetch(\`\${BASE_URL}/entity\`, {
+  const baseUrl = await getApiUrl();
+  const headers = await getAuthHeaders();
+  const response = await fetch(\`\${baseUrl}/entity\`, {
     method: 'GET',
     headers: {
+      ...headers,
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     },
@@ -659,46 +759,45 @@ export async function getEntity(): Promise<T[]> {
   return data.value;
 }
 `;
+    fs.writeFileSync(dataServicePath, dataServiceContent, "utf8");
+    ora("Created DataService.ts in src/services").succeed();
 
-	fs.writeFileSync(dataServicePath, dataServiceContent, "utf8");
-	ora("Created DataService.ts in src/services").succeed();
-
-	// Add Power Pages configuration file
-	const powerPagesConfigPath = path.join(projectDir, "powerpages.config.json");
-	const powerPagesConfigContent = `{
+    // Add Power Pages configuration file
+    const powerPagesConfigPath = path.join(projectDir, "powerpages.config.json");
+    const powerPagesConfigContent = `{
   "compiledPath": "dist",
   "siteName": "MySite",
   "defaultLandingPage": "index.html"
 }
 `;
-	fs.writeFileSync(powerPagesConfigPath, powerPagesConfigContent, "utf8");
-	ora("Created powerpages.config.json").succeed();
+    fs.writeFileSync(powerPagesConfigPath, powerPagesConfigContent, "utf8");
+    ora("Created powerpages.config.json").succeed();
 
-	// Replace README.md with template
-	try {
-		const currentFileDir = path.dirname(fileURLToPath(import.meta.url));
-		const candidates = [
-			path.resolve(currentFileDir, "../readmes/powerpages.md"), // dist layout
-			path.resolve(currentFileDir, "../../src/readmes/powerpages.md"), // repo layout
-		];
-		let templatePath = "";
-		for (const c of candidates) {
-			if (fs.existsSync(c)) {
-				templatePath = c;
-				break;
-			}
-		}
-		const readmeContent = templatePath
-			? fs.readFileSync(templatePath, "utf8")
-			: `# EC Power Pages App\n\nSee documentation inside create-ec-app (powerpages README template).`;
-		fs.writeFileSync(path.join(projectDir, "README.md"), readmeContent, "utf8");
-		ora("Added README.md from template").succeed();
-	} catch (err) {
-		ora("Failed to add README.md from template; keeping default README").warn();
-	}
+    // Replace README.md with template
+    try {
+        const currentFileDir = path.dirname(fileURLToPath(import.meta.url));
+        const candidates = [
+            path.resolve(currentFileDir, "../readmes/powerpages.md"), // dist layout
+            path.resolve(currentFileDir, "../../src/readmes/powerpages.md"), // repo layout
+        ];
+        let templatePath = "";
+        for (const c of candidates) {
+            if (fs.existsSync(c)) {
+                templatePath = c;
+                break;
+            }
+        }
+        const readmeContent = templatePath
+            ? fs.readFileSync(templatePath, "utf8")
+            : `# EC Power Pages App\n\nSee documentation inside create-ec-app (powerpages README template).`;
+        fs.writeFileSync(path.join(projectDir, "README.md"), readmeContent, "utf8");
+        ora("Added README.md from template").succeed();
+    } catch (_) {
+        ora("Failed to add README.md from template; keeping default README").warn();
+    }
 
-	// Initialize Git
-	runCommand("git init", "Initializing Git repository...");
-	runCommand("git add .", "Staging files for initial commit...");
-	runCommand(`git commit -m "Initial commit from create-ec-app"`, "Creating initial commit...");
+    // Initialize Git
+    runCommand("git init", "Initializing Git repository...");
+    runCommand("git add .", "Staging files for initial commit...");
+    runCommand(`git commit -m "Initial commit from create-ec-app"`, "Creating initial commit...");
 };
