@@ -33,7 +33,11 @@ export async function applyLayer(layerDir: string, projectDir: string) {
 			continue;
 		}
 
-		if (/\.(patch\.ts|patch\.tsx|patch\.js|patch\.jsx)$/.test(entry.name)) {
+		if (
+			/\.(patch\.ts|patch\.tsx|patch\.js|patch\.jsx|patch\.css)$/.test(
+				entry.name
+			)
+		) {
 			const targetRel = relPath.replace(".patch.", ".");
 			const targetPath = path.join(projectDir, targetRel);
 

@@ -2,7 +2,7 @@ import "./App.css";
 
 function App() {
 	return (
-		<div>
+		<div className="flex flex-col h-screen items-center justify-center">
 			<p>Hello, world!</p>
 		</div>
 	);
