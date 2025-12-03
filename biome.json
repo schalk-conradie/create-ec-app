@@ -28,7 +28,11 @@
 		}
 	},
 	"assist": {
-		"enabled": true
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	},
 	"formatter": {
 		"indentStyle": "tab",

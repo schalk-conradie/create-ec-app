@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import path, { dirname } from "path";
+import path, { dirname } from "node:path";
 import fs from "fs-extra";
-import { fileURLToPath } from "url";
-import { applyLayer, replaceTokensRecursively } from "./libFunctions.js";
+import { fileURLToPath } from "node:url";
+import { applyLayer, replaceTokensRecursively } from "./libFunctions";
 
 import { intro, outro, select, text, isCancel, cancel } from "@clack/prompts";
 

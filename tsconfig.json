@@ -26,7 +26,10 @@
 		"isolatedModules": true,
 		"noUncheckedSideEffectImports": true,
 		"moduleDetection": "force",
-		"skipLibCheck": true
+		"skipLibCheck": true,
+
+		"moduleResolution": "nodenext",
+		"allowImportingTsExtensions": false
 	},
 	"include": ["src/**/*.ts", "src/**/*.tsx"],
 	"exclude": ["dist", "node_modules", "templates", "templates/**/*"]
