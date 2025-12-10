@@ -8,13 +8,35 @@ This is a Power Pages Single Page Application (SPA) built with React, Vite, and 
 - **Tailwind CSS**: Utility-first CSS framework with an optional Kendo UI preset for styling consistency.
 - **UI Library Choice**: Select between Kendo UI (including theme selection) or Shadcn/ui components.
 - **TanStack Query**: Preconfigured React Query provider for efficient data fetching and caching.
-- **Power Pages AuthContext**: Integrated authentication context that detects the Power Pages user (`Microsoft.Dynamics365.Portal.User`) and retrieves tokens via `window.shell.getTokenDeferred()`.
-- **Local Development Support**: Makes use of ADAL to to log in and proxy requests onto the deployed site
+- **ADAL Authentication**: Integrated Azure Active Directory Authentication Library (ADAL) for Entra ID authentication with token caching.
+- **Local Development Support**: Full authentication support during local development using ADAL
 - **Optimized Vite Build Output**: Builds optimized assets tailored for upload to Power Pages code sites.
 
 ## Auth and API Access
 
-This SPA integrates with Power Pages authentication and API access mechanisms. The `AuthContext` handles user detection and token retrieval using the Power Pages runtime API. Tokens are obtained asynchronously through `window.shell.getTokenDeferred()`, enabling authenticated API calls to Power Pages endpoints.
+This SPA uses ADAL (Azure Active Directory Authentication Library) for authentication. While ADAL is deprecated by Microsoft, it remains functional for Power Pages scenarios until MSAL v2 support is available.
+
+### Authentication Setup
+
+The `AuthContext` requires the following environment variables:
+
+- `VITE_AAD_TENANT_ID`: Your Azure AD tenant ID (defaults to "common")
+- `VITE_AAD_CLIENT_ID`: Your Azure AD application (client) ID (required)
+- `VITE_AUTH_DEBUG`: Optional, set to "true" for verbose authentication logging
+
+### How It Works
+
+1. **Script Loading**: ADAL is dynamically loaded from Microsoft's CDN (`https://secure.aadcdn.microsoftonline-p.com/lib/1.0.17/js/adal.min.js`)
+2. **Token Caching**: Authentication tokens are cached in localStorage for persistence
+3. **User Information**: The authenticated user object includes `userName`, `displayableId`, `name`, `givenName`, `familyName`, and `idToken`
+4. **Token Retrieval**: Access ID tokens via the `getIdToken()` method from the auth context
+
+### Authentication Flow
+
+- When users call `login()`, they're redirected to Azure AD for authentication
+- After successful authentication, users are redirected back with tokens
+- Tokens are automatically cached and reused for subsequent requests
+- Call `logout()` to clear tokens and sign out the user
 
 ## Example Data Fetch Using TanStack Query and AuthContext
 
