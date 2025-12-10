@@ -113,7 +113,7 @@ async function main() {
 		UI: uiType,
 	});
 
-	//NOTE: This is a special case fix for having AuthContext in Kendo for Power Pages
+	//WARN: This is a special case fix for having AuthContext in Kendo for Power Pages
 	if (target === "power-pages" && uiType === "kendo") {
 		const mainTsxPath = path.join(projectDir, "src", "main.tsx");
 		await fs.writeFile(mainTsxPath, POWER_PAGES_KENDO_MAIN_TSX, "utf-8");
@@ -127,7 +127,6 @@ async function main() {
 		s.stop("Dependencies installed.");
 	}
 
-	//NOTE: Initialize git repository
 	const sGit = spinner();
 	sGit.start("Initializing git repository...");
 	execSync("git init", { cwd: projectDir, stdio: "ignore" });
@@ -138,7 +137,9 @@ async function main() {
 	});
 	sGit.stop("Git repository initialized.");
 
-	outro(`Scaffolded ${projectName} as ${target} with ${uiType}`);
+	outro(
+		`Scaffolded ${projectName} as ${target} with ${uiType}. Next steps: 'git remote origin add <url>'`
+	);
 }
 
 main().catch((err) => {
@@ -146,6 +147,7 @@ main().catch((err) => {
 	process.exit(1);
 });
 
+// NOTE: Constants
 const POWER_PAGES_KENDO_MAIN_TSX = `import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
