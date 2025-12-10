@@ -128,7 +128,6 @@ export async function replaceTokensRecursively(
 		if (entry.isDirectory()) {
 			await replaceTokensRecursively(fullPath, tokens);
 		} else {
-			// treat everything as text except obvious binaries if you want to be fancy
 			let content: string;
 			try {
 				content = await fs.readFile(fullPath, "utf8");

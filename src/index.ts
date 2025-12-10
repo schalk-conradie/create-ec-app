@@ -1,11 +1,21 @@
 #!/usr/bin/env node
 
 import path, { dirname } from "node:path";
-import fs from "fs-extra";
 import { fileURLToPath } from "node:url";
+import {
+	cancel,
+	intro,
+	isCancel,
+	log,
+	outro,
+	select,
+	spinner,
+	text,
+} from "@clack/prompts";
+import fs from "fs-extra";
 import { applyLayer, replaceTokensRecursively } from "./libFunctions.js";
-import { log, spinner } from "@clack/prompts";
-import { intro, outro, select, text, isCancel, cancel } from "@clack/prompts";
+
+const { execSync } = await import("node:child_process");
 
 type AppTarget = "webresource" | "portal" | "power-pages";
 type UiTarget = "kendo" | "shadcn-ui";
@@ -62,8 +72,6 @@ async function main() {
 		],
 	});
 
-	// log.step(`Selected UI library: ${String(uiType)}`);
-
 	if (isCancel(uiType)) {
 		cancel("Operation cancelled.");
 		process.exit(0);
@@ -105,6 +113,12 @@ async function main() {
 		UI: uiType,
 	});
 
+	//NOTE: This is a special case fix for having AuthContext in Kendo for Power Pages
+	if (target === "power-pages" && uiType === "kendo") {
+		const mainTsxPath = path.join(projectDir, "src", "main.tsx");
+		await fs.writeFile(mainTsxPath, POWER_PAGES_KENDO_MAIN_TSX, "utf-8");
+	}
+
 	if (shouldRunNpmInstall.run) {
 		const s = spinner();
 		s.start("Running npm install...");
@@ -113,6 +127,17 @@ async function main() {
 		s.stop("Dependencies installed.");
 	}
 
+	//NOTE: Initialize git repository
+	const sGit = spinner();
+	sGit.start("Initializing git repository...");
+	execSync("git init", { cwd: projectDir, stdio: "ignore" });
+	execSync("git add .", { cwd: projectDir, stdio: "ignore" });
+	execSync('git commit -m "Initial commit"', {
+		cwd: projectDir,
+		stdio: "ignore",
+	});
+	sGit.stop("Git repository initialized.");
+
 	outro(`Scaffolded ${projectName} as ${target} with ${uiType}`);
 }
 
@@ -120,3 +145,37 @@ main().catch((err) => {
 	console.error(err);
 	process.exit(1);
 });
+
+const POWER_PAGES_KENDO_MAIN_TSX = `import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@progress/kendo-theme-fluent/dist/all.css";
+import "./index.css";
+import App from "./App.tsx";
+
+import { AuthProvider } from "./context/AuthContext.tsx";
+
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            refetchOnWindowFocus: false,
+            retry: 3,
+            staleTime: 5 * 60 * 1000, // 5 minutes
+        },
+        mutations: {
+            retry: 1,
+        },
+    },
+});
+
+const root = createRoot(document.getElementById("root")!);
+
+root.render(
+    <StrictMode>
+        <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+                <App />
+            </QueryClientProvider>
+        </AuthProvider>
+    </StrictMode>
+);`;
