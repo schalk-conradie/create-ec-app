@@ -1,60 +1,55 @@
 {
-    "name": "create-ec-app",
-    "version": "0.0.4",
-    "description": "Unified CLI tool to create different types of EC applications: Webresource, Portal, Power Pages, and Mobile apps.",
-    "main": "dist/index.js",
-    "type": "module",
-    "bin": {
-        "create-ec-app": "bin/index.js"
-    },
-    "scripts": {
-        "build": "tsc && node scripts/copy-assets.mjs",
-        "dev": "tsc --watch",
-        "test": "node bin/index.js test-app",
-        "prepublishOnly": "npm run build"
-    },
-    "keywords": [
-        "react",
-        "vite",
-        "nextjs",
-        "expo",
-        "kendo",
-        "tailwind",
-        "cli",
-        "powerpages",
-        "portal",
-        "mobile",
-        "webresource",
-        "dynamics",
-        "ec"
-    ],
-    "author": "Schalk Conradie",
-    "license": "MIT",
-    "dependencies": {
-        "chalk": "^5.3.0",
-        "fs-extra": "^11.2.0",
-        "inquirer": "^12.6.3",
-        "ora": "^8.0.1"
-    },
-    "devDependencies": {
-        "@types/node": "^22.8.6",
-        "@types/fs-extra": "^11.0.4",
-        "@types/inquirer": "^9.0.7",
-        "typescript": "^5.6.3"
-    },
-    "engines": {
-        "node": ">=18.0.0"
-    },
-    "files": [
-        "dist/**/*",
-        "bin/**/*"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Enterprisecloud-Pty-Ltd/create-ec-app.git"
-    },
-    "bugs": {
-        "url": "https://github.com/Enterprisecloud-Pty-Ltd/create-ec-app/issues"
-    },
-    "homepage": "https://github.com/Enterprisecloud-Pty-Ltd/create-ec-app#readme"
+	"name": "create-ec-app",
+	"version": "0.0.6",
+	"description": "Unified CLI tool to create different types of EC applications: Webresource, Portal, Power Pages",
+	"bin": {
+		"create-ec-app": "./dist/index.js"
+	},
+	"scripts": {
+		"dev": "tsx src/index.ts",
+		"build": "tsc -p tsconfig.json",
+		"test": "node bin/index.js test-app",
+		"prepublishOnly": "npm run build"
+	},
+	"keywords": [
+		"react",
+		"vite",
+		"kendo",
+		"tailwind",
+		"cli",
+		"powerpages",
+		"portal",
+		"webresource",
+		"dynamics",
+		"ec"
+	],
+	"engines": {
+		"node": ">=22.0.0"
+	},
+	"files": [
+		"dist/**/*",
+		"bin/**/*"
+	],
+	"author": "Schalk Conradie",
+	"type": "module",
+	"dependencies": {
+		"@clack/prompts": "^0.11.0",
+		"fs-extra": "^11.3.2"
+	},
+	"devDependencies": {
+		"@types/fs-extra": "^11.0.4",
+		"@types/node": "^24.10.1",
+		"ts-node": "^10.9.2",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Enterprisecloud-Pty-Ltd/create-ec-app.git"
+	},
+	"bugs": {
+		"url": "https://github.com/Enterprisecloud-Pty-Ltd/create-ec-app/issues"
+	},
+	"homepage": "https://github.com/Enterprisecloud-Pty-Ltd/create-ec-app#readme"
 }
+

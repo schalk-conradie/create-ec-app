@@ -92,3 +92,7 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Testing
+test-*/
+test*/
