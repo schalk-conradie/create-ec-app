@@ -17,7 +17,7 @@ import { applyLayer, replaceTokensRecursively } from "./libFunctions.js";
 
 const { execSync } = await import("node:child_process");
 
-type AppTarget = "webresource" | "portal" | "power-pages";
+type AppTarget = "webresource" | "portal" | "power-pages" | "swa";
 type UiTarget = "kendo" | "shadcn-ui";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,7 +52,8 @@ async function main() {
 		message: "What are you building?",
 		options: [
 			{ label: "Web Resource", value: "webresource" },
-			{ label: "Portal", value: "portal" },
+			{ label: "Portal (WIP)", value: "portal" },
+			{ label: "Static Web App", value: "swa" },
 			{ label: "Power Pages", value: "power-pages" },
 		],
 	});
