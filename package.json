@@ -1,6 +1,6 @@
 {
 	"name": "create-ec-app",
-	"version": "0.0.6",
+	"version": "0.0.8",
 	"description": "Unified CLI tool to create different types of EC applications: Webresource, Portal, Power Pages",
 	"bin": {
 		"create-ec-app": "./dist/index.js"
@@ -28,7 +28,8 @@
 	},
 	"files": [
 		"dist/**/*",
-		"bin/**/*"
+		"bin/**/*",
+		"templates/**/*"
 	],
 	"author": "Schalk Conradie",
 	"type": "module",
