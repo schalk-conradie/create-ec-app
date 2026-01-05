@@ -12,7 +12,7 @@ export const getApiUrl = (): string => {
         return `${clientUrl}/api/data/v9.2`;
     }
 
-    return "https://DOMAIN.REGION.dynamics.com/api/data/{v9.2";
+    return "https://DOMAIN.REGION.dynamics.com/api/data/v9.2";
 };
 
 export const getAuthHeaders = async (): Promise<HeadersInit> => {
